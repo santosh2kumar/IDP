@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: flink-taskmanager
+spec:
+  selector:
+    matchLabels:
+      app: flink
+      component: taskmanager
+  serviceName: "flink-taskmanager"
+  replicas: {{ .Values.workerReplicas }}
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: taskmanager
+    spec:
+#      volumes:
+#      - name: nfs-volume
+#        nfs:
+#          server: 10.218.47.21
+#          path: /mapr/my.cluster.com/
+      spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodetype
+                operator: In
+                values:
+{{ toYaml .Values.nodes | indent 16 }}                
+      containers:
+      - name: taskmanager
+        image: {{ .Values.image }}
+        securityContext:
+            allowPrivilegeEscalation: false
+            seLinuxOptions:
+              level: "s0:c123,c456"
+            readOnlyRootFilesystem: false
+        args: 
+        - "taskmanager"
+        - "-Dtaskmanager.host=$(K8S_POD_IP)"
+        ports:
+        - containerPort: 6121
+          name: data
+        - containerPort: 6122
+          name: rpc
+        - containerPort: 6125
+          name: query
+#        volumeMounts:
+#        - name: nfs-volume
+#          mountPath : /datalake
+        resources:
+            requests:
+              cpu: {{ .Values.resources.cpu }}
+              memory: {{ .Values.resources.memory }}
+        env:
+        - name: JOB_MANAGER_RPC_ADDRESS
+          value: flink-jobmanager
+        - name: K8S_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+  volumeClaimTemplates:
+  - metadata:
+      name: flink
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "flinksc"
+      resources:
+        requests:
+          storage: {{ .Values.resources.storage }}

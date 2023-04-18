@@ -1,0 +1,18 @@
+zookeeperReplicas: 3
+#zookeeperimage: gcr.io/google_samples/k8szk:v3
+zookeeperimage: registry.gitlab.com/abhzt/idp-img:zk3.5
+resources:
+  zoostorage: 10Gi
+  zoomemory: 5Gi
+  zoocpu: 500m
+nodes:
+- wn01
+- wn03
+- wn04
+secrets:
+  maprUserSecret: "mapr-provisioner-secrets"
+  maprClusterSecret: "mapr-ticket-secret"
+restServers: "172.30.203.1:8443"
+cldbHosts: "172.30.203.1:7222,172.30.203.2:7222,172.30.203.3:7222"
+cluster: "datapipeline-ecp.cluster.com"
+replication: 1

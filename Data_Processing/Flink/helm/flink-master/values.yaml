@@ -1,0 +1,15 @@
+flinkReplicas: 1
+image: flink:1.2-scala_2.11
+resources:
+  cpu: 500m
+  memory: 2Gi
+  storage: 2Gi
+nodes:
+- node2
+secrets:
+  maprUserSecret: "mapr-provisioner-secrets"
+  maprClusterSecret: "mapr-ticket-secret"
+restServers: "10.218.47.21:8443"
+cldbHosts: "10.218.47.21:7222"
+cluster: "my.cluster.com"
+replication: 1

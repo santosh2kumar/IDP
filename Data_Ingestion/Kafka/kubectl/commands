@@ -1,0 +1,5 @@
+kafka-topics.sh --zookeeper zoo-svc:2181 --topic messages --create --partitions 1 --replication-factor 1
+
+kafka-console-producer.sh --broker-list kafka-svc:9093 --topic messages
+
+kafka-console-consumer.sh --bootstrap-server kafka-svc:9093 --topic messages --from-beginning

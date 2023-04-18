@@ -1,0 +1,39 @@
+node("kubehead90")
+{
+    stage('SCM checkout'){
+        git branch: '**', credentialsId: '489a7c99-7f0a-4956-8a9e-3c76c80d6418', url: 'https://gitlab.com/abhzt/cicd_usecase.git'
+    }
+stage('Build Docker Image'){   
+    BUILD_FULL = sh (
+    script: "kubectl get pods | grep nasadep |wc -l",
+    returnStatus: true
+    ) == 0
+    echo "Build full flag: ${BUILD_FULL}"
+    if (BUILD_FULL == 0) {
+    sh 'kubectl create -f /home/jenkins_home/workspace/Nifi_ML_job/extras/Model_yamls/.'
+    } else {
+    sh 'kubectl apply -f /home/jenkins_home/workspace/Nifi_ML_job/extras/Model_yamls/.'
+    }
+        }
+stage('Build Docker Image'){
+        sh 'docker build -t registry.gitlab.com/abhzt/compute_exp:nifiminio /home/jenkins_home/workspace/Nifi_ML_job/Application/.'
+   }
+
+stage('Push Docker Image'){
+                withCredentials([string(credentialsId: '6a9f78ee-5176-4c6c-834f-015848065a02', variable: 'gitlab_docker')]) {
+                sh "docker login registry.gitlab.com -u abhzt -p ${gitlab_docker}"
+            }
+
+                sh 'docker push registry.gitlab.com/abhzt/compute_exp:nifiminio'
+   }
+stage('Deploy & Run Cassandra Container on Kubernetes'){
+    
+    sh 'helm upgrade --install cassandra /home/jenkins_home/workspace/Nifi_ML_job/Data_Persistance/Cassandra/helm/.'
+    
+        }
+
+stage('Deploy & Run Nifi Container on Kubernetes'){
+
+    sh 'helm upgrade --install nifi /home/jenkins_home/workspace/Nifi_ML_job/Data_Ingestion/Nifi/helm/.'
+        
+        }

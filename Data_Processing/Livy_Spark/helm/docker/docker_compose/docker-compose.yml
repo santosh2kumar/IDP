@@ -1,0 +1,16 @@
+version: "3.5"
+
+services:
+  builder:
+    image: registry.gitlab.com/abhzt/compute_exp:spark3maprfsv2
+    volumes:
+      - "nfsmountCC:/datalake/"
+
+volumes:
+  nfsmountCC:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=10.218.47.21
+      device: ":/mapr/my.cluster.com/"
+

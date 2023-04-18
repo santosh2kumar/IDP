@@ -1,0 +1,23 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nifisc
+  namespace: default
+provisioner: com.mapr.csi-kdf
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+parameters:
+    csiProvisionerSecretName: "mapr-provisioner-secrets"
+    csiProvisionerSecretNamespace: "default"
+    csiNodePublishSecretName: "mapr-ticket-secret"
+    csiNodePublishSecretNamespace: "default"
+    restServers: "10.218.47.21:8443"
+    cldbHosts: "10.218.47.21:7222"
+    cluster: "my.cluster.com"
+    securityType: "secure"
+    namePrefix: "csi-pv"
+    mountPrefix: "/nifi"
+    advisoryquota: "100M"
+    trackMemory: "false"
+    logLevel: "error"
+    retainLogs: "false"

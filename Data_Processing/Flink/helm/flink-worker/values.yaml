@@ -1,0 +1,17 @@
+workerReplicas: 3
+image: flink:1.2-scala_2.11
+resources:
+  cpu: 1000m
+  memory: 1Gi
+  storage: 1Gi
+nodes:
+- node2
+- node3
+- node4
+secrets:
+  maprUserSecret: "mapr-provisioner-secrets"
+  maprClusterSecret: "mapr-ticket-secret"
+restServers: "10.218.47.21:8443"
+cldbHosts: "10.218.47.21:7222"
+cluster: "my.cluster.com"
+replication: 1

@@ -1,0 +1,19 @@
+nifiReplicas: 3
+nifiimage: registry.gitlab.com/abhzt/compute_exp:nifiminio
+resources:
+  nifistorage: 10Gi
+  nifimemory: 10Gi
+  nificpu: 1000m
+nfsVolume:
+  ip: 172.30.214.2
+  #  path: /mapr/hpe-epa-datapipeline.cluster.com/
+nodes:
+- wn01
+- wn04
+- wn05
+secrets:
+  maprUserSecret: "mapr-provisioner-secrets"
+  maprClusterSecret: "mapr-ticket-secret"
+restServers: "172.30.214.2:8443"
+cldbHosts: "172.30.214.2:7222"
+cluster: "hpe-epa-datapipeline.cluster.com"

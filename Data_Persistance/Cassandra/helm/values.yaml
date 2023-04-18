@@ -1,0 +1,22 @@
+cassandraReplicas: 3
+image: gcr.io/google-samples/cassandra:v12
+resources:
+  cpu: 300m
+  memory: 1.5Gi
+  storage: 500Mi
+MAX_HEAP_SIZE: 512M
+HEAP_NEWSIZE: 100M
+CASSANDRA_CLUSTER_NAME: K8Demo
+CASSANDRA_DC: DC1-K8Demo
+CASSANDRA_RACK: Rack1-K8Demo
+nodes:
+- node2
+- node3
+- node4
+secrets:
+  maprUserSecret: "mapr-provisioner-secrets"
+  maprClusterSecret: "mapr-ticket-secret"
+restServers: "10.218.47.21:8443"
+cldbHosts: "10.218.47.21:7222"
+cluster: "my.cluster.com"
+

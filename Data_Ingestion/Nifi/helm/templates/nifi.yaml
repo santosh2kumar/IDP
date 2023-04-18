@@ -1,0 +1,183 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nifi-hs
+  labels:
+    app: nifi
+spec:
+  ports:
+  - port: 1025
+    name: nodeport
+  - port: 8080
+    name: client
+  clusterIP: None
+  selector:
+    app: nifi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nifi-cs
+  labels:
+    app: nifi
+  #annotations:
+  #    service.beta.kubernetes.io/azure-dns-label-name: nifi
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: client
+    nodePort: 30800
+  selector:
+    app: nifi
+  type: NodePort
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: nifi-pdb
+spec:
+  selector:
+    matchLabels:
+      app: nifi
+  maxUnavailable: 1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nifi
+spec:
+  selector:
+    matchLabels:
+      app: nifi
+  serviceName: nifi-hs
+  replicas: {{ .Values.nifiReplicas }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: nifi
+    spec:
+#      volumes:
+#      - name: nfs-volume
+#        nfs:
+#          server: "{{ .Values.nfsVolume.ip }}"
+#          path: /mapr/hpe-epa-datapipeline.cluster.com/
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodetype
+                operator: In
+                values:
+{{ toYaml .Values.nodes | indent 16 }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - nifi
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: nifi
+        #image: "registry.gitlab.com/abhzt/compute_exp:nifiminiov1"
+        image: {{ .Values.nifiimage }}
+        resources:
+          requests:
+            memory: "{{ .Values.resources.nifimemory }}"
+            cpu: {{ .Values.resources.nificpu }}
+        env:
+        - name: NIFI_CLUSTER_IS_NODE
+          value: "true"
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NIFI_CLUSTER_NODE_PROTOCOL_PORT
+          value: "1025"
+        - name: NIFI_CLUSTER_ADDRESS
+          value: $(HOSTNAME).nifi-hs
+        - name: NIFI_WEB_HTTP_HOST
+          value: $(HOSTNAME).nifi-hs.default.svc.cluster.local
+        - name: NIFI_CLUSTER_NODE_PROTOCOL_PORT
+          value: "9088"
+        - name: NIFI_CLUSTER_FLOW_ELECTION_MAX_WAIT_TIME
+          value: "7 mins"
+        - name: NIFI_ZOOKEEPER_CONNECT_TIMEOUT
+          value: "10 secs"
+        - name: NIFI_ZOOKEEPER_SESSION_TIMEOUT
+          value: "10 secs"
+        - name: NIFI_CLUSTER_NODE_PROTOCOL_MAX_THREADS
+          value: "100"
+        - name: NIFI_ZK_CONNECT_STRING
+          value: "zk-0.zk-svc.default.svc.cluster.local,zk-1.zk-svc.default.svc.cluster.local,zk-2.zk-svc.default.svc.cluster.local"
+        - name: NIFI_ELECTION_MAX_CANDIDATES
+          value: "1"
+        ports:
+        - containerPort: 8080
+          name: client
+        - containerPort: 1025
+          name: nodeport
+        volumeMounts:
+        - name: nifi-database
+          mountPath: "/opt/nifi/nifi-current/database_repository"
+        - name: nifi-flowfile
+          mountPath: "/opt/nifi/nifi-current/flowfile_repository"
+        - name: nifi-content
+          mountPath: "/opt/nifi/nifi-current/content_repository"
+        - name: nifi-provenance
+          mountPath: "/opt/nifi/nifi-current/provenance_repository"
+        - name: nifi-state
+          mountPath: "/opt/nifi/nifi-current/state"
+#        - name: nfs-volume
+#          mountPath : /datalake/
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+  volumeClaimTemplates:
+  - metadata:
+      name: nifi-database
+    spec:
+      storageClassName: "nifisc"
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+  - metadata:
+      name: nifi-flowfile
+    spec:
+      storageClassName: "nifisc"
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+  - metadata:
+      name: nifi-content
+    spec:
+      storageClassName: "nifisc"
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+  - metadata:
+      name: nifi-provenance
+    spec:
+      storageClassName: "nifisc"
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+  - metadata:
+      name: nifi-state
+    spec:
+      storageClassName: "nifisc"
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.resources.nifistorage }}

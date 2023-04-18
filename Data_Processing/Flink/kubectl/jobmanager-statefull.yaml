@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: flink-jobmanager-rest
+spec:
+  type: NodePort
+  ports:
+  - name: rest
+    port: 8081
+    targetPort: 8081
+    nodePort: 30808
+  selector:
+    app: flink
+    component: jobmanager
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: flink-jobmanager
+spec:
+  selector:
+    matchLabels:
+      app: flink 
+      component: jobmanager
+  serviceName: "flink-jobmanager"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: flink 
+        component: jobmanager
+    spec:
+#      volumes:
+#      - name: nfs-volume
+#        nfs:
+#          server: 10.218.47.21
+#          path: /mapr/my.cluster.com/
+#      terminationGracePeriodSeconds: 10
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodetype
+                operator: In
+                values:
+                - wn01       
+      containers:
+      - name: jobmanager
+        image: flink:1.2-scala_2.11
+        securityContext:
+            allowPrivilegeEscalation: false
+            seLinuxOptions:
+              level: "s0:c123,c456"
+            readOnlyRootFilesystem: false
+        resources:
+         limits:
+          memory: "10Gi"
+          cpu: "2000m"
+        args: 
+        - "jobmanager"
+        ports:
+        - containerPort: 6123
+          name: rpc
+        - containerPort: 6124
+          name: blob
+        - containerPort: 6125
+          name: query
+        - containerPort: 8081
+          name: ui
+#        volumeMounts:
+#        - name: nfs-volume
+#          mountPath : /datalake/
+        env:
+        - name: JOB_MANAGER_RPC_ADDRESS
+          value: flink-jobmanager
+#      securityContext:
+#         runAsUser: 1000
+#         fsGroup: 1000
+  volumeClaimTemplates:
+  - metadata:
+      name: flink
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "flinksc"
+      resources:
+        requests:
+          storage: 10Gi

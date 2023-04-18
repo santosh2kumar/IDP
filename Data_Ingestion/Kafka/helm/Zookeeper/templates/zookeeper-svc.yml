@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: zoo-svc
+spec:
+  ports:
+    - name: client
+      port: 2181
+      targetPort: 2181
+  selector:
+    app: zk
+

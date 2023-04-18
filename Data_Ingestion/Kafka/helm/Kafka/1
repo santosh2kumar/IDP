@@ -1,0 +1,20 @@
+kafkaReplicas: 3
+#kafkaimage: gcr.io/google_samples/k8skafka:v1
+kafkaimage: registry.gitlab.com/abhzt/idp-img:kafka3.2.1
+resources:
+  kafkastorage: 150Gi
+  kafkamemory: 64Gi
+  kafkacpu: 1000m
+nodes:
+- wn01
+- wn02
+#- wn03
+#- wn04
+#- wn05
+secrets:
+  maprUserSecret: "mapr-provisioner-secrets"
+  maprClusterSecret: "mapr-ticket-secret"
+restServers: "172.30.203.1:8443"
+cldbHosts: "172.30.203.1:7222,172.30.203.2:7222,172.30.203.3:7222"
+cluster: "datapipeline-ecp.cluster.com"
+replication: 2
